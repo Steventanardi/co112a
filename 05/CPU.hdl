@@ -40,4 +40,45 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+     Not(in=instruction[15],out=Ai);
+    Not(in=Ai,out=Ci);
+
+    And(a=Ci,b=instruction[5],out=activateA);
+
+    Mux16(a=instruction, b=ALUoutput,sel=instruction[15],out=Aregisterin);
+    Or(a=Ai,b=activateA,out=loadA);
+
+    ARegister(in=Aregisterin,load=loadA,out=Ao);
+
+    And(a=Ci,b=instruction[4],out=loadD);
+    DRegister(in=ALUoutput, load=loadD, out=Do);
+    
+    Mux16(a=Ao, b=inM, sel=instruction[12],out=AorM);
+
+    ALU(x=Do,y=AorM,zx=instruction[11],nx=instruction[10],zy=instruction[9],ny=instruction[8],f=instruction[7],no=instruction[6],out=ALUoutput,zr=Zeroo,ng=Negativeo);
+  
+    Or16(a=false,b=ALUoutput,out=outM);
+    And(a=Ci,b=instruction[3],out=writeM);
+    Or16(a=false, b=Ao, out[0..14]=addressM);
+
+
+    And(a=instruction[0],b=instruction[1],out=j23);
+    And(a=instruction[2],b=j23,out=j123);
+
+    Not(in=Zeroo,out=notzero);
+    Not(in=Negativeo,out=gt);
+    And(a=notzero,b=gt,out=positive);
+    And(a=instruction[0],b=positive,out=positiveLoad);
+
+    Or(a=j123,b=positiveLoad,out=load1);
+
+    And(a=instruction[2],b=Negativeo,out=negativeLoad);
+
+    And(a=instruction[1],b=Zeroo,out=zeroLoad);
+
+    Or(a=negativeLoad,b=zeroLoad,out=load2);
+    Or(a=load1,b=load2,out=loadcondition);
+    And(a=Ci,b=loadcondition,out=loadPC);
+    Not(in=loadPC,out=increment);
+    PC(in=Ao,inc=increment,load=loadPC,reset=reset,out[0..14]=pc);
 }
